@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="ja" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>金額計算</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='40' y2='40' gradientUnits='userSpaceOnUse'%3E%3Cstop offset='0%25' stop-color='%233a7ef6'/%3E%3Cstop offset='100%25' stop-color='%231faa6b'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='40' height='40' rx='10' fill='url(%23g)'/%3E%3Ctext x='20' y='23' text-anchor='middle' font-family='sans-serif' font-weight='800' font-size='19' fill='white'%3E%C2%A5%3C/text%3E%3Crect x='8' y='29' width='4' height='5' rx='1.5' fill='white' opacity='0.5'/%3E%3Crect x='14' y='26' width='4' height='8' rx='1.5' fill='white' opacity='0.65'/%3E%3Crect x='20' y='23' width='4' height='11' rx='1.5' fill='white' opacity='0.8'/%3E%3Crect x='26' y='27' width='4' height='7' rx='1.5' fill='white' opacity='0.6'/%3E%3C/svg%3E"/>
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+:root {
+  --bg:#f4f2ee; --surface:#fff; --surface2:#f8f6f2;
+  --border:#e4dfd6; --border2:#ede9e2;
+  --text:#18160f; --text2:#6b6259; --text3:#a09388;
+  --accent:#3a7ef6; --accentL:#eaf1ff; --accentD:#2a6ee0;
+  --green:#1faa6b; --greenL:#e3f8ef; --greenD:#17905c;
+  --red:#e04030; --redL:#fff0ee;
+  --shadow:0 2px 12px rgba(0,0,0,0.08); --shadow2:0 4px 24px rgba(0,0,0,0.12);
+  --font:'M PLUS Rounded 1c',sans-serif;
+}
+[data-theme="dark"] {
+  --bg:#0e0d0b; --surface:#1c1a17; --surface2:#252320;
+  --border:#2e2c28; --border2:#353330;
+  --text:#f0ede6; --text2:#8a8078; --text3:#5c5650;
+  --accentL:#1a2840; --greenL:#0f2820; --redL:#2a1510;
+  --shadow:0 2px 12px rgba(0,0,0,0.4); --shadow2:0 4px 24px rgba(0,0,0,0.5);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;background:var(--bg);font-family:var(--font);-webkit-font-smoothing:antialiased;transition:background 0.3s;}
+body{display:flex;align-items:flex-start;justify-content:center;padding:32px 20px 60px;}
+input[type=range]{-webkit-appearance:none;appearance:none;background:transparent;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:1px;height:1px;}
+.chip-dragging{opacity:0.35!important;transform:scale(0.97);}
+.chip-dragover{outline:2px solid var(--accent);outline-offset:2px;}
+.tweaks-panel{display:none;position:fixed;bottom:20px;right:20px;background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:16px 18px;font-family:var(--font);font-size:13px;z-index:9999;box-shadow:var(--shadow2);min-width:200px;color:var(--text);}
+.tweaks-panel.open{display:block;}
+.tweaks-panel label{display:block;margin-bottom:10px;color:var(--text2);font-size:13px;}
+.tweaks-panel select,.tweaks-panel input[type=number]{width:100%;padding:5px 8px;font-size:13px;margin-top:4px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text);font-family:var(--font);}
+.tweaks-title{font-weight:700;margin-bottom:12px;font-size:14px;color:var(--text);}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<div class="tweaks-panel" id="tweaksPanel">
+  <div class="tweaks-title">Tweaks</div>
+  <label>総額<input type="number" id="tweak-total" value="20000" step="1000" onchange="window._applyTweaks&&window._applyTweaks()"/></label>
+  <label>スナップ単位
+    <select id="tweak-snap" onchange="window._applyTweaks&&window._applyTweaks()">
+      <option value="50" selected>50円</option>
+      <option value="100">100円</option>
+      <option value="500">500円</option>
+    </select>
+  </label>
+</div>
+
+<script type="text/babel" src="ios-frame.jsx"></script>
+<script type="text/babel">
+
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{"total": 20000, "snap": 50}/*EDITMODE-END*/;
+
+// ── App icon SVG ─────────────────────────────────────────
+function AppIcon({ size = 28 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="40" height="40" rx="10" fill="url(#iconGrad)"/>
+      <defs>
+        <linearGradient id="iconGrad" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#3a7ef6"/>
+          <stop offset="100%" stopColor="#1faa6b"/>
+        </linearGradient>
+      </defs>
+      {/* ¥ symbol */}
+      <text x="20" y="24" textAnchor="middle" fontFamily="'M PLUS Rounded 1c',sans-serif"
+        fontWeight="800" fontSize="20" fill="white" opacity="0.95">¥</text>
+      {/* bar chart dots — 3 people with different heights */}
+      <rect x="8" y="29" width="4" height="5" rx="1.5" fill="white" opacity="0.55"/>
+      <rect x="14" y="26" width="4" height="8" rx="1.5" fill="white" opacity="0.7"/>
+      <rect x="20" y="23" width="4" height="11" rx="1.5" fill="white" opacity="0.85"/>
+      <rect x="26" y="27" width="4" height="7" rx="1.5" fill="white" opacity="0.65"/>
+    </svg>
+  );
+}
+
+// ── Sun / Moon icons ─────────────────────────────────────
+function SunIcon({ size=14, color="var(--text3)" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round">
+      <circle cx="12" cy="12" r="4"/>
+      <line x1="12" y1="2" x2="12" y2="4"/>
+      <line x1="12" y1="20" x2="12" y2="22"/>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+      <line x1="2" y1="12" x2="4" y2="12"/>
+      <line x1="20" y1="12" x2="22" y2="12"/>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+    </svg>
+  );
+}
+
+function MoonIcon({ size=14, color="var(--text3)" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round">
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+    </svg>
+  );
+}
+
+// ── utils ────────────────────────────────────────────────
+const snapVal = (v, s) => Math.round(v / s) * s;
+
+// ── animated number ──────────────────────────────────────
+function useAnimatedNumber(target, duration=180) {
+  const [disp, setDisp] = React.useState(target);
+  const ref = React.useRef({ from:target, start:null, raf:null });
+  React.useEffect(() => {
+    cancelAnimationFrame(ref.current.raf);
+    ref.current.from = disp; ref.current.start = null;
+    const run = ts => {
+      if (!ref.current.start) ref.current.start = ts;
+      const t = Math.min((ts - ref.current.start) / duration, 1);
+      const e = 1 - Math.pow(1-t, 3);
+      setDisp(Math.round(ref.current.from + (target - ref.current.from)*e));
+      if (t < 1) ref.current.raf = requestAnimationFrame(run);
+    };
+    ref.current.raf = requestAnimationFrame(run);
+    return () => cancelAnimationFrame(ref.current.raf);
+  }, [target]);
+  return disp;
+}
+
+// ── redistribute lower grades ────────────────────────────
+// grades[0]=top(最上級生, highest), grades[1..]=lower (descending payment)
+// lower = grades.slice(1): lower[0] >= lower[1] >= ...
+function redistributeLower(lower, targetSum, STEP) {
+  let p = lower.map(g => g.payment);
+  let diff = p.reduce((s,v,i) => s + v*lower[i].count, 0) - targetSum;
+  let iter = 0;
+  if (diff > 0) {
+    while (diff > STEP*0.5 && iter++ < 10000) {
+      let done = false;
+      for (let i = p.length-1; i >= 0; i--) {
+        const floor = i < p.length-1 ? p[i+1] : 0;
+        if (p[i]-STEP >= floor) { p[i]-=STEP; diff-=lower[i].count*STEP; done=true; break; }
+      }
+      if (!done) break;
+    }
+  } else if (diff < 0) {
+    while (-diff > STEP*0.5 && iter++ < 10000) {
+      let done = false;
+      for (let i = p.length-1; i >= 0; i--) {
+        const ceil = i > 0 ? p[i-1] : Infinity;
+        if (p[i]+STEP <= ceil) { p[i]+=STEP; diff+=lower[i].count*STEP; done=true; break; }
+      }
+      if (!done) break;
+    }
+  }
+  return lower.map((g,i) => ({...g, payment:p[i]}));
+}
+
+// ── Stepper ───────────────────────────────────────────────
+function Stepper({ value, onChange }) {
+  const btn = (lbl, fn) => (
+    <button onClick={fn} style={{
+      width:26,height:26,borderRadius:'50%',border:'none',
+      background:'var(--border2)',color:'var(--text2)',
+      fontFamily:'var(--font)',fontSize:17,lineHeight:1,
+      cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,
+    }}>{lbl}</button>
+  );
+  return (
+    <div style={{display:'flex',alignItems:'center',gap:5}}>
+      {btn('−', () => onChange(Math.max(1, value-1)))}
+      <span style={{fontSize:15,fontWeight:700,color:'var(--text)',minWidth:18,textAlign:'center'}}>{value}</span>
+      {btn('＋', () => onChange(value+1))}
+    </div>
+  );
+}
+
+// ── Period chip (draggable) ──────────────────────────────
+function PeriodChip({ grade, isTop, onChangeNum, onChangeCount, onRemove, canRemove,
+  dragging, dragOver, onDragStart, onDragOver, onDrop, onDragEnd }) {
+  const [editNum, setEditNum] = React.useState(false);
+  const numRef = React.useRef();
+  React.useEffect(() => { if (editNum && numRef.current) numRef.current.select(); }, [editNum]);
+
+  const accent = isTop ? 'var(--green)' : 'var(--accent)';
+  const bg = isTop ? 'var(--greenL)' : 'var(--accentL)';
+  const bdr = isTop ? 'rgba(31,170,107,0.3)' : 'rgba(58,126,246,0.3)';
+
+  return (
+    <div
+      draggable
+      onDragStart={onDragStart} onDragOver={onDragOver} onDrop={onDrop} onDragEnd={onDragEnd}
+      className={`${dragging?'chip-dragging':''} ${dragOver?'chip-dragover':''}`}
+      style={{
+        display:'flex',alignItems:'center',gap:7,
+        background:bg, border:`1.5px solid ${bdr}`, borderRadius:12,
+        padding:'5px 10px', cursor:'grab', userSelect:'none',
+        transition:'opacity 0.15s, transform 0.15s',
+        position:'relative',
+      }}
+    >
+      {/* drag handle */}
+      <svg width="10" height="14" viewBox="0 0 10 14" fill="var(--text3)" style={{flexShrink:0,opacity:0.5}}>
+        <circle cx="3" cy="3" r="1.5"/><circle cx="7" cy="3" r="1.5"/>
+        <circle cx="3" cy="7" r="1.5"/><circle cx="7" cy="7" r="1.5"/>
+        <circle cx="3" cy="11" r="1.5"/><circle cx="7" cy="11" r="1.5"/>
+      </svg>
+
+      {editNum ? (
+        <div style={{display:'flex',alignItems:'center',gap:1}}>
+          <input ref={numRef} type="number" value={grade.num} min={1} max={99}
+            onChange={e => onChangeNum(Number(e.target.value))}
+            onBlur={() => setEditNum(false)}
+            onKeyDown={e => e.key==='Enter' && setEditNum(false)}
+            style={{width:38,fontFamily:'var(--font)',fontSize:14,fontWeight:800,
+              border:'none',borderBottom:`2px solid ${accent}`,
+              outline:'none',background:'transparent',color:'var(--text)',textAlign:'center'}}
+          />
+          <span style={{fontSize:14,fontWeight:800,color:'var(--text)'}}>期</span>
+        </div>
+      ) : (
+        <button onClick={() => setEditNum(true)} style={{
+          background:'none',border:'none',cursor:'pointer',padding:0,
+          display:'flex',alignItems:'center',gap:3,fontFamily:'var(--font)',
+        }}>
+          <span style={{fontSize:14,fontWeight:800,color:'var(--text)'}}>{grade.num}期</span>
+          {isTop && <span style={{fontSize:11,fontWeight:700,color:accent,
+            background:isTop?'rgba(31,170,107,0.15)':'rgba(58,126,246,0.15)',
+            borderRadius:4,padding:'1px 5px'}}>最上</span>}
+          <span style={{fontSize:10,color:'var(--text3)',opacity:0.6}}>✏</span>
+        </button>
+      )}
+      <Stepper value={grade.count} onChange={onChangeCount}/>
+      <span style={{fontSize:12,color:'var(--text2)'}}>人</span>
+      {canRemove && (
+        <button onClick={onRemove} style={{
+          background:'none',border:'none',cursor:'pointer',
+          color:'var(--text3)',fontSize:14,padding:'0 2px',lineHeight:1,
+        }}>×</button>
+      )}
+    </div>
+  );
+}
+
+// ── Custom pointer-based slider ──────────────────────────
+function SliderRow({ grade, isTop, payment, step, color, upperLimit, lowerLimit=0,
+  onChange, topOverridden, onReset }) {
+  const MAX = 10000;
+  const effectiveMax = upperLimit ?? MAX;
+  const pct = Math.min(100, Math.max(0, (payment / MAX) * 100));
+  const animated = useAnimatedNumber(payment);
+  const [dragging, setDragging] = React.useState(false);
+  const trackRef = React.useRef();
+
+  // Keep latest params accessible inside window event handlers
+  const paramsRef = React.useRef();
+  paramsRef.current = { lowerLimit, effectiveMax, step, onChange };
+
+  function calcValue(clientX) {
+    const rect = trackRef.current.getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    const raw = ratio * MAX; // position on full 0-MAX axis
+    const { lowerLimit, effectiveMax, step } = paramsRef.current;
+    return Math.max(lowerLimit, Math.min(effectiveMax, snapVal(raw, step)));
+  }
+
+  function getClientX(e) {
+    if (e.touches && e.touches.length > 0) return e.touches[0].clientX;
+    if (e.changedTouches && e.changedTouches.length > 0) return e.changedTouches[0].clientX;
+    return e.clientX;
+  }
+
+  function onPointerDown(e) {
+    e.preventDefault();
+    setDragging(true);
+    paramsRef.current.onChange(calcValue(getClientX(e)));
+  }
+
+  React.useEffect(() => {
+    if (!dragging) return;
+    const onMove = (e) => {
+      e.preventDefault();
+      paramsRef.current.onChange(calcValue(getClientX(e)));
+    };
+    const onUp = () => setDragging(false);
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    window.addEventListener('touchmove', onMove, { passive: false });
+    window.addEventListener('touchend', onUp);
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+      window.removeEventListener('touchmove', onMove);
+      window.removeEventListener('touchend', onUp);
+    };
+  }, [dragging]);
+
+  return (
+    <div style={{marginBottom:20}}>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}}>
+        <div style={{display:'flex',alignItems:'center',gap:8}}>
+          <div style={{width:10,height:10,borderRadius:'50%',background:color,
+            boxShadow:`0 0 0 3px ${isTop?'var(--greenL)':'var(--accentL)'}`}}/>
+          <span style={{fontSize:17,fontWeight:800,color:'var(--text)'}}>{grade.num}期</span>
+          {isTop && <span style={{fontSize:11,fontWeight:700,color:'var(--green)',
+            background:'var(--greenL)',borderRadius:6,padding:'2px 7px'}}>最上級生</span>}
+          {isTop && !topOverridden && <span style={{fontSize:11,color:'var(--text3)',fontWeight:500}}>自動</span>}
+          {topOverridden && (
+            <button onClick={onReset} style={{
+              fontSize:11,color:'var(--green)',fontWeight:700,
+              background:'var(--greenL)',border:'none',borderRadius:6,
+              padding:'2px 7px',cursor:'pointer',fontFamily:'var(--font)',
+            }}>↺ 自動</button>
+          )}
+        </div>
+        <div style={{display:'flex',alignItems:'baseline',gap:4}}>
+          <span style={{fontSize:24,fontWeight:800,color,fontVariantNumeric:'tabular-nums'}}>
+            ¥{animated.toLocaleString()}
+          </span>
+          <span style={{fontSize:12,color:'var(--text3)'}}>/ 人</span>
+        </div>
+      </div>
+
+      {/* custom track */}
+      <div
+        ref={trackRef}
+        onMouseDown={onPointerDown}
+        onTouchStart={onPointerDown}
+        style={{
+          position:'relative', padding:'11px 0', cursor:'pointer',
+          userSelect:'none', touchAction:'none',
+        }}
+      >
+        <div style={{height:6,borderRadius:3,background:'var(--border2)',overflow:'visible',position:'relative'}}>
+          {/* filled portion */}
+          <div style={{position:'absolute',left:0,width:`${pct}%`,top:0,bottom:0,
+            background:`linear-gradient(90deg,${color}99,${color})`,borderRadius:3}}/>
+        </div>
+        {/* thumb */}
+        <div style={{
+          position:'absolute', top:'50%', left:`${pct}%`,
+          width:28, height:28, borderRadius:'50%',
+          background:'var(--surface)', border:`3px solid ${color}`,
+          boxShadow: dragging
+            ? `0 0 0 6px ${isTop?'rgba(31,170,107,0.18)':'rgba(58,126,246,0.18)'}, var(--shadow)`
+            : 'var(--shadow)',
+          transform:`translate(-50%, -50%) scale(${dragging?1.18:1})`,
+          transition:'transform 0.12s, box-shadow 0.12s',
+          display:'flex', alignItems:'center', justifyContent:'center',
+          pointerEvents:'none',
+        }}>
+          <div style={{width:8,height:8,borderRadius:'50%',background:color}}/>
+        </div>
+      </div>
+
+      <div style={{display:'flex',justifyContent:'space-between',marginTop:2}}>
+        <span style={{fontSize:11,color:'var(--text3)'}}>¥0</span>
+        <span style={{fontSize:11,color:'var(--text3)'}}>¥{MAX.toLocaleString()}</span>
+      </div>
+    </div>
+  );
+}
+
+// ── Calculator ────────────────────────────────────────────
+// grades[0] = 最上級生 (auto, highest payer) — positional, not flagged
+// grades[1..] = lower grades, descending payment
+function Calculator({ initTotal, snapStep, darkMode, onToggleDark }) {
+  const [total, setTotal] = React.useState(initTotal);
+  const [editTotal, setEditTotal] = React.useState(false);
+  const totalRef = React.useRef();
+  React.useEffect(() => { if (editTotal && totalRef.current) totalRef.current.select(); }, [editTotal]);
+
+  function makeGrades(t, sn) {
+    const base = snapVal(t/13, sn);
+    return [
+      {id:1,num:15,count:4,payment:base}, // [0] = 最上級生
+      {id:2,num:16,count:6,payment:base},
+      {id:3,num:17,count:3,payment:base},
+    ];
+  }
+
+  const [grades, setGrades] = React.useState(() => makeGrades(initTotal, snapStep));
+  const [topOverridden, setTopOverridden] = React.useState(false);
+
+  React.useEffect(() => {
+    setTotal(initTotal);
+    setGrades(makeGrades(initTotal, snapStep));
+    setTopOverridden(false);
+  }, [initTotal, snapStep]);
+
+  // grades[0]=top, grades.slice(1)=lower (descending)
+  const topGrade = grades[0];
+  const lower = grades.slice(1);
+  const totalPeople = grades.reduce((s,g)=>s+g.count,0);
+  const equalSplit = Math.round(total/totalPeople);
+
+  const manualSum = lower.reduce((s,g)=>s+g.payment*g.count,0);
+  const autoTop = Math.round((total-manualSum)/(topGrade?.count||1));
+  const topPayment = topOverridden ? (topGrade?.payment??0) : autoTop;
+
+  const actualTotal = lower.reduce((s,g)=>s+g.payment*g.count,0) + topPayment*(topGrade?.count||0);
+  const balanced = Math.abs(actualTotal-total) <= 1;
+  const animatedTotal = useAnimatedNumber(actualTotal);
+
+  function updateGrade(id, upd) {
+    setGrades(gs => gs.map(g => g.id===id ? {...g,...upd} : g));
+  }
+
+  // lower[0]=highest payer, lower[last]=lowest payer, constraint: lower[i]>=lower[i+1]
+  function setLowerPayment(id, val) {
+    const idx = lower.findIndex(g=>g.id===id);
+    let v = val;
+    const floor = idx < lower.length-1 ? lower[idx+1].payment : 0;
+    v = Math.max(v, floor);
+    const ceil = idx > 0 ? lower[idx-1].payment : topPayment;
+    v = Math.min(v, ceil);
+
+    if (!topOverridden) {
+      updateGrade(id, {payment: v});
+      return;
+    }
+
+    // top is manually fixed — redistribute other lower grades to compensate
+    const targetLowerSum = total - topPayment * (topGrade?.count || 1);
+    const movedSubtotal = v * lower[idx].count;
+    const otherTarget = targetLowerSum - movedSubtotal;
+    const others = lower.filter((_, i) => i !== idx);
+    const adjusted = redistributeLower(others, otherTarget, snapStep);
+
+    // splice adjusted back in order
+    let ptr = 0;
+    const fullLower = lower.map((g, i) =>
+      i === idx ? {...g, payment: v} : (adjusted[ptr++] ?? g)
+    );
+
+    // enforce descending order
+    for (let i = 1; i < fullLower.length; i++) {
+      if (fullLower[i].payment > fullLower[i-1].payment)
+        fullLower[i] = {...fullLower[i], payment: fullLower[i-1].payment};
+    }
+
+    setGrades([grades[0], ...fullLower]);
+  }
+
+  function setTopManual(val) {
+    setTopOverridden(true);
+    const newTop = Math.max(val, lower.length>0 ? lower[0].payment : 0);
+    const target = total - newTop*(topGrade?.count||1);
+    const adjusted = redistributeLower(lower, target, snapStep);
+    setGrades([{...topGrade, payment:newTop}, ...adjusted]);
+  }
+
+  function addGrade() {
+    const maxNum = Math.max(...grades.map(g=>g.num));
+    const lowestPay = lower.length>0 ? lower[lower.length-1].payment : snapVal(total/totalPeople, snapStep);
+    setGrades([...grades, {id:Date.now(), num:maxNum+1, count:4, payment:lowestPay}]);
+  }
+
+  // ── Drag & drop for chips ──
+  const [dragIdx, setDragIdx] = React.useState(null);
+  const [dragOverIdx, setDragOverIdx] = React.useState(null);
+
+  function handleDragStart(e, idx) {
+    setDragIdx(idx);
+    e.dataTransfer.effectAllowed = 'move';
+  }
+  function handleDragOver(e, idx) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (idx !== dragOverIdx) setDragOverIdx(idx);
+  }
+  function handleDrop(e, idx) {
+    e.preventDefault();
+    if (dragIdx === null || dragIdx === idx) { setDragIdx(null); setDragOverIdx(null); return; }
+    const next = [...grades];
+    const [moved] = next.splice(dragIdx, 1);
+    next.splice(idx, 0, moved);
+    setGrades(next);
+    setTopOverridden(false);
+    setDragIdx(null); setDragOverIdx(null);
+  }
+  function handleDragEnd() { setDragIdx(null); setDragOverIdx(null); }
+
+  // share
+  const shareLines = grades.map((g,i) => {
+    const pay = i===0 ? Math.max(0,topPayment) : g.payment;
+    return `${g.num}期 ¥${pay.toLocaleString()}`;
+  });
+  const shareText = shareLines.join(' / ');
+
+  const [shareState, setShareState] = React.useState('idle');
+  function handleShare() {
+    if (navigator.clipboard) navigator.clipboard.writeText(shareText).catch(()=>{});
+    setShareState('copied');
+    setTimeout(()=>setShareState('idle'), 2000);
+  }
+
+  return (
+    <div style={{background:'var(--bg)',height:'100%',display:'flex',flexDirection:'column',transition:'background 0.3s'}}>
+
+      {/* sticky header */}
+      <div style={{background:'var(--surface)',borderBottom:'1.5px solid var(--border)',
+        padding:'12px 16px',position:'sticky',top:0,zIndex:20,
+        display:'flex',alignItems:'center',gap:10}}>
+        <div style={{flex:1}}>
+          <div style={{fontSize:11,fontWeight:700,color:'var(--text3)',letterSpacing:1,
+            textTransform:'uppercase',marginBottom:3}}>総額</div>
+          {editTotal ? (
+            <div style={{display:'flex',alignItems:'baseline',gap:3}}>
+              <span style={{fontSize:22,fontWeight:800,color:'var(--text3)'}}>¥</span>
+              <input ref={totalRef} type="number" value={total} step={1000}
+                onChange={e=>setTotal(Number(e.target.value))}
+                onBlur={()=>setEditTotal(false)}
+                onKeyDown={e=>e.key==='Enter'&&setEditTotal(false)}
+                style={{fontFamily:'var(--font)',fontSize:28,fontWeight:800,color:'var(--text)',
+                  border:'none',borderBottom:'2px solid var(--accent)',
+                  outline:'none',background:'transparent',width:140}}
+              />
+            </div>
+          ) : (
+            <button onClick={()=>setEditTotal(true)} style={{
+              background:'none',border:'none',cursor:'pointer',padding:0,
+              display:'flex',alignItems:'baseline',gap:4,fontFamily:'var(--font)'}}>
+              <span style={{fontSize:28,fontWeight:800,color:'var(--text)'}}>
+                ¥{total.toLocaleString()}
+              </span>
+              <span style={{fontSize:12,color:'var(--text3)'}}>✏</span>
+            </button>
+          )}
+        </div>
+
+        {/* people count + dark toggle */}
+        <div style={{display:'flex',alignItems:'center',gap:12}}>
+          <div style={{display:'flex',alignItems:'center',gap:4}}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+            <span style={{fontSize:13,fontWeight:700,color:'var(--text2)'}}>{totalPeople}人</span>
+          </div>
+          <div style={{display:'flex',alignItems:'center',gap:5}}>
+            {darkMode ? <MoonIcon color="var(--accent)"/> : <SunIcon color="var(--text3)"/>}
+            <button onClick={onToggleDark} style={{
+              width:36,height:20,borderRadius:10,
+              background:darkMode?'var(--accent)':'var(--border2)',
+              border:'none',cursor:'pointer',position:'relative',transition:'background 0.25s',flexShrink:0}}>
+              <div style={{
+                position:'absolute',top:2,left:darkMode?18:2,
+                width:16,height:16,borderRadius:'50%',
+                background:'var(--surface)',transition:'left 0.25s',
+                boxShadow:'0 1px 3px rgba(0,0,0,0.25)',
+              }}/>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* scrollable body */}
+      <div style={{flex:1,overflowY:'auto',padding:'14px 16px 24px'}}>
+
+        {/* chips + add */}
+        <div style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap',marginBottom:18}}>
+          {grades.map((g,i) => (
+            <PeriodChip key={g.id} grade={g} isTop={i===0}
+              onChangeNum={v=>updateGrade(g.id,{num:v})}
+              onChangeCount={v=>updateGrade(g.id,{count:v})}
+              onRemove={()=>setGrades(gs=>gs.filter(x=>x.id!==g.id))}
+              canRemove={grades.length>2}
+              dragging={dragIdx===i}
+              dragOver={dragOverIdx===i && dragIdx!==i}
+              onDragStart={e=>handleDragStart(e,i)}
+              onDragOver={e=>handleDragOver(e,i)}
+              onDrop={e=>handleDrop(e,i)}
+              onDragEnd={handleDragEnd}
+            />
+          ))}
+          <button onClick={addGrade} style={{
+            display:'flex',alignItems:'center',gap:4,
+            background:'transparent',border:'1.5px dashed var(--border)',
+            borderRadius:12,padding:'5px 12px',cursor:'pointer',
+            fontFamily:'var(--font)',fontSize:13,fontWeight:700,
+            color:'var(--text3)'}}>＋ 期追加</button>
+        </div>
+
+        {/* top grade slider */}
+        {topGrade && (
+          <SliderRow grade={topGrade} isTop={true}
+            payment={Math.max(0,topPayment)} step={snapStep}
+            color="var(--green)"
+            lowerLimit={lower.length>0?lower[0].payment:0}
+            topOverridden={topOverridden}
+            onReset={()=>{setTopOverridden(false);updateGrade(topGrade.id,{payment:autoTop});}}
+            onChange={setTopManual}
+          />
+        )}
+
+        <div style={{height:1,background:'var(--border)',margin:'4px 0 20px'}}/>
+
+        {/* lower grade sliders */}
+        {lower.map((g,i) => (
+          <SliderRow key={g.id} grade={g} isTop={false}
+            payment={g.payment} step={snapStep}
+            color="var(--accent)"
+            lowerLimit={i<lower.length-1?lower[i+1].payment:0}
+            upperLimit={i>0?lower[i-1].payment:equalSplit}
+            onChange={v=>setLowerPayment(g.id,v)}
+          />
+        ))}
+
+        {/* summary */}
+        <div style={{borderTop:'1.5px solid var(--border)',marginTop:8,paddingTop:14}}>
+          <div style={{fontSize:11,fontWeight:700,color:'var(--text3)',
+            letterSpacing:1,textTransform:'uppercase',marginBottom:10}}>支払いサマリー</div>
+
+          {/* total check */}
+          <div style={{
+            marginBottom:12,padding:'10px 14px',
+            background:balanced?'var(--greenL)':'var(--redL)',
+            borderRadius:12,display:'flex',alignItems:'center',justifyContent:'space-between',
+            transition:'background 0.3s',
+          }}>
+            <span style={{fontSize:14,fontWeight:800,color:balanced?'var(--green)':'var(--red)'}}>
+              {balanced?'✓ 合計一致':'⚠ 差額あり'}
+            </span>
+            <div style={{textAlign:'right'}}>
+              <span style={{fontSize:20,fontWeight:800,fontVariantNumeric:'tabular-nums',
+                color:balanced?'var(--green)':'var(--red)'}}>
+                ¥{animatedTotal.toLocaleString()}
+              </span>
+              {!balanced && <span style={{fontSize:12,color:'var(--text3)',marginLeft:6}}>/ ¥{total.toLocaleString()}</span>}
+            </div>
+          </div>
+
+          {/* rows */}
+          {[{...topGrade, payment:Math.max(0,topPayment)}, ...lower].map((g,i,arr) => {
+            const color = i===0 ? 'var(--green)' : 'var(--accent)';
+            const sub = g.payment * g.count;
+            return (
+              <div key={g.id} style={{
+                display:'flex',alignItems:'center',justifyContent:'space-between',
+                padding:'8px 0',
+                borderBottom:i<arr.length-1?'1px solid var(--border2)':'none',
+              }}>
+                <div style={{display:'flex',alignItems:'center',gap:8}}>
+                  <div style={{width:8,height:8,borderRadius:'50%',background:color,flexShrink:0}}/>
+                  <span style={{fontSize:16,fontWeight:700,color:'var(--text)'}}>{g.num}期</span>
+                  <span style={{fontSize:12,color:'var(--text3)'}}>×{g.count}人</span>
+                  {i===0 && !topOverridden && <span style={{fontSize:11,color:'var(--green)'}}>自動</span>}
+                </div>
+                <div style={{display:'flex',alignItems:'baseline',gap:10}}>
+                  <span style={{fontSize:13,color:'var(--text3)'}}>計 ¥{sub.toLocaleString()}</span>
+                  <span style={{fontSize:20,fontWeight:800,color,fontVariantNumeric:'tabular-nums'}}>
+                    ¥{g.payment.toLocaleString()}<span style={{fontSize:12,fontWeight:500,color:'var(--text3)'}}>/人</span>
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* copy button */}
+        <button onClick={handleShare} style={{
+          width:'100%',padding:'14px 0',marginTop:14,
+          background:shareState==='copied'?'var(--green)':'linear-gradient(135deg,var(--accent),var(--accentD))',
+          color:'#fff',border:'none',borderRadius:14,
+          fontFamily:'var(--font)',fontSize:17,fontWeight:800,
+          cursor:'pointer',transition:'background 0.25s',
+          boxShadow:shareState==='copied'?'0 4px 16px rgba(31,170,107,0.35)':'0 4px 16px rgba(58,126,246,0.35)',
+          letterSpacing:0.3,
+        }}>
+          {shareState==='copied'?'✓ コピーしました！':'結果をコピー'}
+        </button>
+
+        {/* copy preview */}
+        <div style={{marginTop:10,padding:'10px 12px',background:'var(--surface2)',
+          borderRadius:10,border:'1px solid var(--border)'}}>
+          <div style={{fontSize:11,color:'var(--text3)',marginBottom:4,fontWeight:700,letterSpacing:0.5}}>コピー内容</div>
+          <div style={{fontSize:13,color:'var(--text2)',lineHeight:1.6,whiteSpace:'pre-wrap',fontWeight:500}}>
+            {shareText}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── App ───────────────────────────────────────────────────
+function App() {
+  const [tweaks, setTweaks] = React.useState(TWEAK_DEFAULTS);
+  const [dark, setDark] = React.useState(false);
+
+  React.useEffect(() => {
+    document.documentElement.setAttribute('data-theme', dark?'dark':'light');
+  }, [dark]);
+
+  React.useEffect(() => {
+    window._applyTweaks = () => {
+      const t = Number(document.getElementById('tweak-total').value);
+      const s = Number(document.getElementById('tweak-snap').value);
+      setTweaks({total:t,snap:s});
+      window.parent.postMessage({type:'__edit_mode_set_keys',edits:{total:t,snap:s}},'*');
+    };
+    window.addEventListener('message', e => {
+      if (e.data?.type==='__activate_edit_mode') document.getElementById('tweaksPanel').classList.add('open');
+      if (e.data?.type==='__deactivate_edit_mode') document.getElementById('tweaksPanel').classList.remove('open');
+    });
+    window.parent.postMessage({type:'__edit_mode_available'},'*');
+  }, []);
+
+  return (
+    <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:14}}>
+      <div style={{fontFamily:'var(--font)',fontSize:13,color:'var(--text2)',textAlign:'center'}}>
+        金額計算ツール — Hi-Fi プロトタイプ
+      </div>
+      <IOSDevice width={375} height={800} dark={dark}>
+        <div style={{height:'100%',paddingTop:50}}>
+          <div style={{background:'var(--surface)',borderBottom:'1px solid var(--border)',
+            padding:'10px 16px',display:'flex',alignItems:'center',gap:10}}>
+            <AppIcon size={26}/>
+            <span style={{fontFamily:'var(--font)',fontSize:18,fontWeight:800,color:'var(--text)'}}>
+              金額計算
+            </span>
+          </div>
+          <div style={{height:'calc(100% - 46px)',overflow:'hidden'}}>
+            <Calculator initTotal={tweaks.total} snapStep={tweaks.snap}
+              darkMode={dark} onToggleDark={()=>setDark(d=>!d)}/>
+          </div>
+        </div>
+      </IOSDevice>
+      <div style={{fontFamily:'var(--font)',fontSize:12,color:'var(--text3)',textAlign:'center'}}>
+        チップをドラッグ並び替え可 · 上が最上級生 · ダークモード切替
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
