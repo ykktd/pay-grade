@@ -37,7 +37,7 @@
 						計 ¥{(calculator.topPayment * calculator.topGrade.count).toLocaleString('ja-JP')}
 					</span>
 					<span class="grade-per">
-						¥<span use:animateNumber={calculator.topPayment}></span>/人
+						¥<span use:animateNumber={calculator.topPayment}></span><span class="grade-per-unit">/人</span>
 					</span>
 				</div>
 			{/if}
@@ -51,7 +51,7 @@
 						計 ¥{(grade.payment * grade.count).toLocaleString('ja-JP')}
 					</span>
 					<span class="grade-per">
-						¥<span use:animateNumber={grade.payment}></span>/人
+						¥<span use:animateNumber={grade.payment}></span><span class="grade-per-unit">/人</span>
 					</span>
 				</div>
 			{/each}
@@ -178,5 +178,11 @@
 		color: var(--text);
 		min-width: 90px;
 		text-align: right;
+	}
+
+	.grade-per-unit {
+		font-size: 12px;
+		font-weight: 400;
+		color: var(--text2);
 	}
 </style>
