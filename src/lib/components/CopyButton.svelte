@@ -5,16 +5,14 @@
 	let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
 	function buildCopyText(): string {
-		const lines: string[] = ['【打ち上げ金額】'];
-		lines.push(`合計: ¥${calculator.total.toLocaleString('ja-JP')}`);
-		lines.push('');
+		const lines: string[] = [];
 		if (calculator.topGrade) {
 			lines.push(
-				`${calculator.topGrade.num}期（${calculator.topGrade.count}人）: ¥${calculator.topPayment.toLocaleString('ja-JP')}/人`
+				`${calculator.topGrade.num}期: ${calculator.topPayment.toLocaleString('ja-JP')}円`
 			);
 		}
 		for (const g of calculator.lower) {
-			lines.push(`${g.num}期（${g.count}人）: ¥${g.payment.toLocaleString('ja-JP')}/人`);
+			lines.push(`${g.num}期: ${g.payment.toLocaleString('ja-JP')}円`);
 		}
 		return lines.join('\n');
 	}
