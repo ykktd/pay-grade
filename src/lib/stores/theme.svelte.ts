@@ -1,31 +1,40 @@
-const THEME_KEY = 'pay-grade-dark';
+import { browser } from "$app/environment";
 
-class ThemeStore {
-	darkMode = $state<boolean>(false);
+const THEME_KEY = "pay-grade-dark";
 
-	constructor() {
-		if (typeof localStorage !== 'undefined') {
-			const saved = localStorage.getItem(THEME_KEY);
-			if (saved !== null) {
-				this.darkMode = saved === 'true';
-			} else {
-				this.darkMode = window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
-			}
-		}
+export function createThemeStore() {
+  let darkMode = $state(false);
 
-		$effect(() => {
-			localStorage.setItem(THEME_KEY, String(this.darkMode));
-			if (this.darkMode) {
-				document.documentElement.classList.add('dark');
-			} else {
-				document.documentElement.classList.remove('dark');
-			}
-		});
-	}
+  // 初期化の責務（同期）
+  if (browser) {
+    const saved = localStorage.getItem(THEME_KEY);
+    darkMode =
+      saved !== null
+        ? saved === "true"
+        : (window.matchMedia?.("(prefers-color-scheme: dark)").matches ??
+          false);
+  }
 
-	toggle() {
-		this.darkMode = !this.darkMode;
-	}
+  // 副作用の責務
+  // モジュールレベルでのインスタンス化に備え、rootでラップしてOrphan Errorを回避
+  if (browser) {
+    $effect.root(() => {
+      $effect(() => {
+        localStorage.setItem(THEME_KEY, String(darkMode));
+        document.documentElement.classList.toggle("dark", darkMode);
+      });
+    });
+  }
+
+  return {
+    get darkMode() {
+      return darkMode;
+    },
+    toggle: () => {
+      darkMode = !darkMode;
+    },
+  };
 }
 
-export const theme = new ThemeStore();
+// コンポーネントツリー外（モジュール評価時）での実行
+export const theme = createThemeStore();
