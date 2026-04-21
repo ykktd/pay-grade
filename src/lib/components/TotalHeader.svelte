@@ -68,7 +68,7 @@
 <style>
 	.total-header {
 		position: sticky;
-		top: 46px;
+		top: var(--nav-height);
 		z-index: 90;
 		background: var(--surface);
 		border-bottom: 1px solid var(--border);

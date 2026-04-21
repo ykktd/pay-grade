@@ -129,14 +129,24 @@ class CalculatorStore {
   addGrade = () => {
     const lastNum =
       this.grades.length > 0 ? this.grades[this.grades.length - 1].num : 0;
-    const lastPayment =
-      this.grades.length > 0 ? this.grades[this.grades.length - 1].payment : 0;
     const newGrade: Grade = {
       id: crypto.randomUUID(),
       num: lastNum + 1,
       count: 3,
-      payment: Math.max(0, lastPayment - SNAP_STEP),
+      payment: 0,
     };
+
+    if (this.topOverridden && this.topGrade) {
+      const targetLowerSum = this.total - this.topPayment * this.topGrade.count;
+      const adjustedLower = redistributeLower(
+        [...this.lower, newGrade],
+        targetLowerSum,
+        SNAP_STEP,
+      );
+      this.grades = [this.topGrade, ...adjustedLower];
+      return;
+    }
+
     this.grades = [...this.grades, newGrade];
     this.topOverridden = false;
   };

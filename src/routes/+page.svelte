@@ -26,7 +26,7 @@
 
 <style>
 	main {
-		padding-top: calc(46px + 62px);
+		padding-top: var(--nav-height);
 		max-width: 480px;
 		margin: 0 auto;
 	}

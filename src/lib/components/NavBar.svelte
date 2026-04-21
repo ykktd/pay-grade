@@ -69,7 +69,7 @@
 		left: 0;
 		right: 0;
 		z-index: 100;
-		height: 46px;
+		height: var(--nav-height);
 		background: var(--surface);
 		border-bottom: 1px solid var(--border);
 		transition: background-color 0.3s;
