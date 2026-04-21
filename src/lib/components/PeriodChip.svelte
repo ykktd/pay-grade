@@ -71,9 +71,6 @@
 				{grade.num}期
 			</button>
 		{/if}
-		{#if isTop}
-			<span class="top-badge">TOP</span>
-		{/if}
 	</div>
 
 	<div class="stepper">
@@ -161,16 +158,6 @@
 		border-radius: 4px;
 		padding: 1px 4px;
 		outline: none;
-	}
-
-	.top-badge {
-		font-size: 9px;
-		font-weight: 800;
-		letter-spacing: 0.06em;
-		color: var(--green);
-		background: color-mix(in srgb, var(--green) 15%, transparent);
-		border-radius: 4px;
-		padding: 1px 4px;
 	}
 
 	.stepper {
