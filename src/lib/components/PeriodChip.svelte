@@ -12,9 +12,22 @@
 		ondragover: (e: DragEvent) => void;
 		ondrop: (e: DragEvent) => void;
 		ondragend: () => void;
+		onpointerdown: (e: PointerEvent) => void; // downのみ残す
 	}
 
-	let { grade, index, isTop, dragging, dragOver, ondragstart, ondragover, ondrop, ondragend }: Props = $props();
+	// 修正: 不要なPropsの受け取りを削除
+	let {
+		grade,
+		index,
+		isTop,
+		dragging,
+		dragOver,
+		ondragstart,
+		ondragover,
+		ondrop,
+		ondragend,
+		onpointerdown
+	}: Props = $props();
 
 	let editingNum = $state(false);
 	let numInput = $state('');
@@ -52,8 +65,13 @@
 	{ondragend}
 	style="--color: {color}; --color-light: {colorLight};"
 	role="listitem"
+	data-chip-index={index}
 >
-	<span class="drag-handle" aria-hidden="true">⠿</span>
+	<span 
+		class="drag-handle" 
+		aria-hidden="true"
+		{onpointerdown}
+	>⠿</span>
 
 	<div class="chip-label">
 		{#if editingNum}
@@ -112,7 +130,7 @@
 			transform 0.15s,
 			outline 0.15s;
 		user-select: none;
-		touch-action: none;
+		/* 修正: ここから touch-action: none; を削除 */
 	}
 
 	.chip.dragging {
@@ -130,6 +148,10 @@
 		font-size: 14px;
 		cursor: grab;
 		line-height: 1;
+		/* 修正: ハンドル部分にのみ touch-action: none; を適用 */
+		touch-action: none; 
+		padding: 4px; /* タップ領域を少し広げるとモバイルで掴みやすくなります */
+		margin-left: -4px;
 	}
 
 	.chip-label {
