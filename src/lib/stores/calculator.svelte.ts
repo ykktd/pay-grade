@@ -99,9 +99,20 @@ class CalculatorStore {
     const v = clamp(snapped, floor, ceil);
 
     if (!this.topOverridden) {
+      let autoV = v;
+      if (idx === 0) {
+        const otherLowerSum = this.lower
+          .filter((_, i) => i !== 0)
+          .reduce((s, g) => s + g.payment * g.count, 0);
+        const maxRaw =
+          (this.total - otherLowerSum) /
+          (this.lower[0].count + this.topGrade.count);
+        const autoCeil = Math.floor(maxRaw / SNAP_STEP) * SNAP_STEP;
+        autoV = clamp(v, floor, Math.max(floor, autoCeil));
+      }
       this.grades = [
         this.topGrade,
-        ...this.lower.map((g) => (g.id === id ? { ...g, payment: v } : g)),
+        ...this.lower.map((g) => (g.id === id ? { ...g, payment: autoV } : g)),
       ];
       return;
     }
