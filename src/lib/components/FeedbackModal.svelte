@@ -222,7 +222,7 @@
 		border-radius: 8px;
 		background: var(--surface);
 		color: var(--text);
-		font-size: 14px;
+		font-size: 16px;
 		font-family: inherit;
 		transition: border-color 0.2s, box-shadow 0.2s;
 		resize: vertical;
