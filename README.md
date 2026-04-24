@@ -1,42 +1,47 @@
-# sv
+# 金額計算アプリ
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+期ごとに支払額が異なる飲み会・イベントの集金計算をかんたんに行えるツールです。
 
-## Creating a project
+## 使い方
 
-If you're seeing this, you've probably already done this step. Congrats!
+### 1. 総額を入力する
 
-```sh
-# create a new project
-npx sv create my-app
-```
+画面上部の金額をタップすると編集できます。徴収したい総額を入力してください。
 
-To recreate this project with the same configuration:
+### 2. 期を設定する
 
-```sh
-# recreate this project
-pnpm dlx sv@0.15.1 create --template minimal --types ts --install pnpm .
-```
+チップ（タグ）が各期を表しています。
 
-## Developing
+- **＋ 期追加** ボタンで期を追加できます
+- 各チップの人数 `×N` の部分をタップして人数を変更できます
+- チップをドラッグ＆ドロップで並び替えられます（一番左が「上の期」扱い）
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+### 3. 支払額を調整する
 
-```sh
-npm run dev
+各期のスライダーを動かして、一人あたりの支払額を設定します。
 
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
-```
+| 期 | 動作 |
+|---|---|
+| **上の期**（一番左） | デフォルトは「自動」モード。総額から下の期の合計を引いた残額を自動で割り振ります |
+| **下の期** | スライダーで一人あたりの金額を手動で設定します |
 
-## Building
+- スライダー右端の **＋** ボタンで上限を 5,000 円 → 10,000 円に拡張できます
+- 上の期の金額を手動変更した場合、**↺ リセット** ボタンで自動モードに戻せます
 
-To create a production version of your app:
+### 4. 合計を確認する
 
-```sh
-npm run build
-```
+画面下部の「支払いサマリー」で確認します。
 
-You can preview the production build with `npm run preview`.
+- **合計一致** ✓：各期の支払総額が設定した総額と一致しています
+- **差額あり** ⚠：金額がずれています。上の期を自動モードにするか、スライダーを調整してください
 
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+### 5. 結果をコピーする
+
+「コピー」ボタンを押すと、期ごとの一人あたり金額をクリップボードにコピーできます。
+
+---
+
+## ヒント
+
+- **上の期は自動計算がおすすめ**：下の期の金額を決めると、上の期の一人あたり金額が自動で計算されます
+- **キーボード操作対応**：スライダーにフォーカスした状態で ← → キーで微調整できます（Shift キーで10倍ステップ）
