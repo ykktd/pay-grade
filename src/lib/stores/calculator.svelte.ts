@@ -167,12 +167,34 @@ class CalculatorStore {
     );
   };
 
+  private normalizeOrderPayments = (ordered: Grade[]): Grade[] => {
+    if (ordered.length <= 1) return ordered;
+
+    const top = ordered[0];
+    const lower = ordered.slice(1).map((g) => ({ ...g }));
+    const topBound = Math.max(0, computeAutoTop(this.total, lower, top.count));
+
+    if (lower.length > 0) {
+      lower[0].payment = clamp(lower[0].payment, 0, topBound);
+      for (let i = 1; i < lower.length; i++) {
+        lower[i].payment = clamp(lower[i].payment, 0, lower[i - 1].payment);
+      }
+    }
+
+    const syncedTop = {
+      ...top,
+      payment: computeAutoTop(this.total, lower, top.count),
+    };
+
+    return [syncedTop, ...lower];
+  };
+
   reorderGrades = (from: number, to: number) => {
     if (from === to) return;
     const arr = [...this.grades];
     const [moved] = arr.splice(from, 1);
     arr.splice(to, 0, moved);
-    this.grades = arr;
+    this.grades = this.normalizeOrderPayments(arr);
     this.topOverridden = false;
   };
 }
