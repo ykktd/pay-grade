@@ -1,6 +1,6 @@
 import type { Grade, PersistedState } from "$lib/types";
 import { browser } from "$app/environment";
-import { SNAP_STEP, SLIDER_MAX, STORAGE_KEY } from "$lib/types";
+import { SNAP_STEP, SLIDER_HARD_MAX, STORAGE_KEY } from "$lib/types";
 import {
   redistributeLower,
   computeAutoTop,
@@ -75,7 +75,7 @@ class CalculatorStore {
   };
 
   setTopManual = (val: number) => {
-    const snapped = snapToStep(clamp(val, 0, SLIDER_MAX));
+    const snapped = snapToStep(clamp(val, 0, SLIDER_HARD_MAX));
     const minTop = this.lower.length > 0 ? this.lower[0].payment : 0;
     const newTop = Math.max(snapped, minTop);
     const target = this.total - newTop * this.topGrade.count;
@@ -90,7 +90,7 @@ class CalculatorStore {
   };
 
   setLowerPayment = (id: string, val: number) => {
-    const snapped = snapToStep(clamp(val, 0, SLIDER_MAX));
+    const snapped = snapToStep(clamp(val, 0, SLIDER_HARD_MAX));
     const idx = this.lower.findIndex((g) => g.id === id);
     if (idx === -1) return;
 

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { animateNumber } from '$lib/actions/animateNumber';
-	import { SLIDER_MAX, SNAP_STEP } from '$lib/types';
+	import { SLIDER_MAX, SLIDER_HARD_MAX, SNAP_STEP } from '$lib/types';
 
 	interface Props {
 		gradeNum: number;
@@ -16,14 +16,15 @@
 
 	let trackEl = $state<HTMLDivElement | null>(null);
 	let isDragging = $state(false);
+	let sliderMax = $state(SLIDER_MAX);
 
-	const fillPct = $derived((payment / SLIDER_MAX) * 100);
+	const fillPct = $derived((payment / sliderMax) * 100);
 
 	function getValueFromPointer(e: PointerEvent): number {
 		if (!trackEl) return payment;
 		const rect = trackEl.getBoundingClientRect();
 		const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-		const raw = pct * SLIDER_MAX;
+		const raw = pct * sliderMax;
 		return Math.round(raw / SNAP_STEP) * SNAP_STEP;
 	}
 
@@ -48,7 +49,7 @@
 		const step = e.shiftKey ? SNAP_STEP * 10 : SNAP_STEP;
 		if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
 			e.preventDefault();
-			onchange(Math.min(payment + step, SLIDER_MAX));
+			onchange(Math.min(payment + step, sliderMax));
 		} else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
 			e.preventDefault();
 			onchange(Math.max(payment - step, 0));
@@ -86,7 +87,7 @@
 		class:disabled={isTop && isAuto}
 		role="slider"
 		aria-valuemin={0}
-		aria-valuemax={SLIDER_MAX}
+		aria-valuemax={sliderMax}
 		aria-valuenow={payment}
 		aria-label="{gradeNum}期の支払額"
 		tabindex={isTop && isAuto ? -1 : 0}
@@ -108,8 +109,23 @@
 
 	<div class="scale-labels">
 		<span>¥0</span>
-		<span>¥{(SLIDER_MAX / 2).toLocaleString('ja-JP')}</span>
-		<span>¥{SLIDER_MAX.toLocaleString('ja-JP')}</span>
+		<span>¥{(sliderMax / 2).toLocaleString('ja-JP')}</span>
+		<div class="scale-max">
+			<span>¥{sliderMax.toLocaleString('ja-JP')}</span>
+			{#if sliderMax < SLIDER_HARD_MAX}
+				<button
+					class="expand-btn"
+					onclick={() => (sliderMax = SLIDER_HARD_MAX)}
+					aria-label="スライダー上限を{SLIDER_HARD_MAX.toLocaleString('ja-JP')}円に拡張"
+				>+</button>
+			{:else}
+				<button
+					class="expand-btn"
+					onclick={() => { if (payment > SLIDER_MAX) onchange(SLIDER_MAX); sliderMax = SLIDER_MAX; }}
+					aria-label="スライダー上限を{SLIDER_MAX.toLocaleString('ja-JP')}円に戻す"
+				>−</button>
+			{/if}
+		</div>
 	</div>
 </div>
 
@@ -271,5 +287,30 @@
 		font-size: 10px;
 		color: var(--text3);
 		margin-top: 2px;
+	}
+
+	.scale-max {
+		display: flex;
+		align-items: center;
+		gap: 3px;
+	}
+
+	.expand-btn {
+		background: none;
+		border: 1px solid var(--border2);
+		border-radius: 4px;
+		padding: 0 4px;
+		font-size: 10px;
+		color: var(--text3);
+		cursor: pointer;
+		line-height: 14px;
+		transition:
+			border-color 0.15s,
+			color 0.15s;
+	}
+
+	.expand-btn:hover {
+		border-color: var(--accent);
+		color: var(--accent);
 	}
 </style>

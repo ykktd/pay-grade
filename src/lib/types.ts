@@ -13,7 +13,8 @@ export interface PersistedState {
 }
 
 export const SNAP_STEP = 50;
-export const SLIDER_MAX = 10_000;
+export const SLIDER_MAX = 5_000;
+export const SLIDER_HARD_MAX = 10_000;
 export const STORAGE_KEY = 'pay-grade-state';
 
 export const GRADE_COLORS = {
