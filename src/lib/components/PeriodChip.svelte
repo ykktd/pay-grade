@@ -39,7 +39,7 @@
 	function startEditNum() {
 		numInput = String(grade.num);
 		editingNum = true;
-		setTimeout(() => { numInputEl?.focus(); numInputEl?.select(); }, 0);
+		setTimeout(() => numInputEl?.focus(), 0);
 	}
 
 	function commitNum() {
@@ -66,7 +66,7 @@
 >
 	<span
 		class="drag-handle"
-		aria-hidden="true"
+		aria-label="ドラッグして並び替え"
 		draggable="true"
 		{ondragstart}
 		{ondragend}

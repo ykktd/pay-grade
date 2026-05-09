@@ -8,7 +8,7 @@
 	function startEdit() {
 		inputVal = String(calculator.total);
 		editing = true;
-		setTimeout(() => { inputEl?.focus(); inputEl?.select(); }, 0);
+		setTimeout(() => inputEl?.focus(), 0);
 	}
 
 	function commitEdit() {
