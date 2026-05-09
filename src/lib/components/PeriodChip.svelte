@@ -39,7 +39,7 @@
 	function startEditNum() {
 		numInput = String(grade.num);
 		editingNum = true;
-		setTimeout(() => numInputEl?.select(), 0);
+		setTimeout(() => { numInputEl?.focus(); numInputEl?.select(); }, 0);
 	}
 
 	function commitNum() {
@@ -58,18 +58,18 @@
 	class="chip"
 	class:dragging
 	class:dragover={dragOver}
-	draggable="true"
-	{ondragstart}
 	{ondragover}
 	{ondrop}
-	{ondragend}
 	style="--color: {color}; --color-light: {colorLight};"
 	role="listitem"
 	data-chip-index={index}
 >
-	<span 
-		class="drag-handle" 
+	<span
+		class="drag-handle"
 		aria-hidden="true"
+		draggable="true"
+		{ondragstart}
+		{ondragend}
 		{onpointerdown}
 	>⠿</span>
 
