@@ -66,6 +66,8 @@
 >
 	<span
 		class="drag-handle"
+		role="button"
+		tabindex="-1"
 		aria-label="ドラッグして並び替え"
 		draggable="true"
 		{ondragstart}
