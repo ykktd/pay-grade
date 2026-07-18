@@ -1,8 +1,30 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { theme } from '$lib/stores/theme.svelte';
 	import FeedbackModal from './FeedbackModal.svelte';
+	import HelpModal from './HelpModal.svelte';
 
 	let feedbackOpen = $state(false);
+	let helpOpen = $state(false);
+
+	const HELP_STORAGE_KEY = 'pay-grade-help-v1';
+
+	onMount(() => {
+		try {
+			helpOpen = localStorage.getItem(HELP_STORAGE_KEY) !== 'seen';
+		} catch {
+			// ストレージを利用できない環境でも、そのセッションでは使い方を案内する
+			helpOpen = true;
+		}
+	});
+
+	function markHelpAsSeen() {
+		try {
+			localStorage.setItem(HELP_STORAGE_KEY, 'seen');
+		} catch {
+			// プライベートブラウズなどで保存できない場合は、そのまま閉じる
+		}
+	}
 </script>
 
 <nav>
@@ -27,7 +49,19 @@
 
 		<div class="nav-right">
 			<button
-				class="feedback-btn"
+				class="icon-btn"
+				onclick={() => (helpOpen = true)}
+				aria-label="使い方を見る"
+			>
+				<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+					<circle cx="12" cy="12" r="10" />
+					<path d="M9.09 9a3 3 0 1 1 5.83 1c0 2-3 2-3 4" />
+					<line x1="12" y1="18" x2="12.01" y2="18" />
+				</svg>
+			</button>
+
+			<button
+				class="icon-btn"
 				onclick={() => (feedbackOpen = true)}
 				aria-label="フィードバックを送る"
 			>
@@ -75,6 +109,7 @@
 	</div>
 </nav>
 
+<HelpModal bind:open={helpOpen} onclose={markHelpAsSeen} />
 <FeedbackModal bind:open={feedbackOpen} />
 
 <style>
@@ -118,7 +153,7 @@
 		gap: 8px;
 	}
 
-	.feedback-btn {
+	.icon-btn {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
@@ -134,7 +169,7 @@
 			color 0.25s;
 	}
 
-	.feedback-btn:hover {
+	.icon-btn:hover {
 		background: var(--surface2);
 		color: var(--text);
 	}
