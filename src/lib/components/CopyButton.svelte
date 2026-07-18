@@ -8,11 +8,11 @@
 		const lines: string[] = [];
 		if (calculator.topGrade) {
 			lines.push(
-				`${calculator.topGrade.num}期: ${calculator.topPayment.toLocaleString('ja-JP')}円`
+				`${calculator.topGrade.label}: ${calculator.topPayment.toLocaleString('ja-JP')}円`
 			);
 		}
 		for (const g of calculator.lower) {
-			lines.push(`${g.num}期: ${g.payment.toLocaleString('ja-JP')}円`);
+			lines.push(`${g.label}: ${g.payment.toLocaleString('ja-JP')}円`);
 		}
 		return lines.join('\n');
 	}

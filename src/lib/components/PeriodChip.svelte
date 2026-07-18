@@ -29,28 +29,38 @@
 		onpointerdown
 	}: Props = $props();
 
-	let editingNum = $state(false);
-	let numInput = $state('');
-	let numInputEl = $state<HTMLInputElement | null>(null);
+	let editingLabel = $state(false);
+	let labelDraft = $state<string | null>(null);
 
 	const color = $derived(isTop ? 'var(--green)' : 'var(--accent)');
 	const colorLight = $derived(isTop ? 'var(--greenL)' : 'var(--accentL)');
+	const displayedLabel = $derived(labelDraft ?? grade.label);
 
-	function startEditNum() {
-		numInput = String(grade.num);
-		editingNum = true;
-		setTimeout(() => numInputEl?.select(), 0);
+	function startEditLabel(input: HTMLInputElement) {
+		if (editingLabel) return;
+		labelDraft = grade.label;
+		editingLabel = true;
+
+		// iOSでもタップ操作の最中にキーボードが開くよう、DOMを同期的に編集可能にする
+		input.readOnly = false;
+		input.focus({ preventScroll: true });
 	}
 
-	function commitNum() {
-		const n = parseInt(numInput, 10);
-		if (!isNaN(n)) calculator.updateGradeNum(grade.id, n);
-		editingNum = false;
+	function commitLabel() {
+		const normalized = (labelDraft ?? grade.label).trim();
+		if (normalized) {
+			calculator.updateGradeLabel(grade.id, normalized);
+		}
+		labelDraft = null;
+		editingLabel = false;
 	}
 
-	function onNumKeydown(e: KeyboardEvent) {
-		if (e.key === 'Enter') commitNum();
-		if (e.key === 'Escape') editingNum = false;
+	function onLabelKeydown(e: KeyboardEvent) {
+		if (e.key === 'Enter') commitLabel();
+		if (e.key === 'Escape') {
+			labelDraft = null;
+			editingLabel = false;
+		}
 	}
 </script>
 
@@ -74,21 +84,21 @@
 	>⠿</span>
 
 	<div class="chip-label">
-		{#if editingNum}
-			<input
-				bind:this={numInputEl}
-				bind:value={numInput}
-				type="number"
-				class="num-input"
-				onblur={commitNum}
-				onkeydown={onNumKeydown}
-				min="1"
-			/>
-		{:else}
-			<button class="num-btn" onclick={startEditNum} aria-label="{grade.num}期 — タップで編集">
-				{grade.num}期
-			</button>
-		{/if}
+		<input
+			type="text"
+			class="label-input"
+			class:editing={editingLabel}
+			value={displayedLabel}
+			readonly={!editingLabel}
+			oninput={(event) => (labelDraft = event.currentTarget.value)}
+			onpointerdown={(event) => startEditLabel(event.currentTarget)}
+			onclick={(event) => startEditLabel(event.currentTarget)}
+			onblur={commitLabel}
+			onkeydown={onLabelKeydown}
+			aria-label="{grade.label} — タップで編集"
+			maxlength="30"
+			style:width="{Math.min(Math.max(displayedLabel.length, 2), 14)}em"
+		/>
 	</div>
 
 	<div class="stepper">
@@ -110,7 +120,7 @@
 	<button
 		class="delete-btn"
 		onclick={() => calculator.removeGrade(grade.id)}
-		aria-label="{grade.num}期を削除"
+		aria-label="{grade.label}を削除"
 		disabled={calculator.grades.length <= 1}
 	>×</button>
 </div>
@@ -160,26 +170,25 @@
 		gap: 4px;
 	}
 
-	.num-btn {
-		background: none;
-		border: none;
-		padding: 0;
+	.label-input {
+		min-width: 2em;
+		max-width: 14em;
+		background: transparent;
+		border: 1.5px solid transparent;
+		border-radius: 4px;
+		padding: 1px 3px;
+		outline: none;
 		cursor: pointer;
 		font-size: 13px;
 		font-weight: 700;
 		color: var(--color);
+		font-family: inherit;
 	}
 
-	.num-input {
-		width: 50px;
-		font-size: 13px;
-		font-weight: 700;
-		color: var(--color);
+	.label-input.editing {
 		background: var(--surface);
 		border: 1.5px solid var(--color);
-		border-radius: 4px;
-		padding: 1px 4px;
-		outline: none;
+		cursor: text;
 	}
 
 	.stepper {

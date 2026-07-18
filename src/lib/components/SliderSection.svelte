@@ -9,7 +9,7 @@
 		{#if calculator.topGrade}
 			<div class="top-area">
 				<SliderRow
-					gradeNum={calculator.topGrade.num}
+					gradeLabel={calculator.topGrade.label}
 					payment={calculator.topPayment}
 					color={GRADE_COLORS.top.main}
 					isTop={true}
@@ -26,7 +26,7 @@
 			<div class="lower-area">
 				{#each calculator.lower as grade (grade.id)}
 					<SliderRow
-						gradeNum={grade.num}
+						gradeLabel={grade.label}
 						payment={grade.payment}
 						color={GRADE_COLORS.lower.main}
 						isTop={false}

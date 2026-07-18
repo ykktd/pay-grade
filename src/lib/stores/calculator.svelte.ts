@@ -9,9 +9,9 @@ import {
 } from "$lib/logic/redistribute";
 
 const DEFAULT_GRADES: Grade[] = [
-  { id: "1", num: 15, count: 4, payment: 2000 },
-  { id: "2", num: 16, count: 6, payment: 1500 },
-  { id: "3", num: 17, count: 3, payment: 1000 },
+  { id: "1", label: "15期", count: 4, payment: 2000 },
+  { id: "2", label: "16期", count: 6, payment: 1500 },
+  { id: "3", label: "17期", count: 3, payment: 1000 },
 ];
 
 function loadFromStorage(): PersistedState | null {
@@ -19,7 +19,45 @@ function loadFromStorage(): PersistedState | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
-    return JSON.parse(raw) as PersistedState;
+    const saved = JSON.parse(raw) as Omit<Partial<PersistedState>, "grades"> & {
+      grades?: Array<Partial<Grade> & { num?: unknown }>;
+    };
+    if (!Array.isArray(saved.grades)) return null;
+
+    const grades = saved.grades.map((grade, index) => {
+      const currentLabel =
+        typeof grade.label === "string" ? grade.label.trim() : "";
+      const legacyLabel =
+        typeof grade.num === "number"
+          ? `${grade.num}期`
+          : typeof grade.num === "string" && grade.num.trim()
+            ? grade.num.trim().endsWith("期")
+              ? grade.num.trim()
+              : `${grade.num.trim()}期`
+            : "";
+
+      return {
+        id: typeof grade.id === "string" ? grade.id : `restored-${index}`,
+        label: currentLabel || legacyLabel || `${index + 1}期`,
+        count:
+          typeof grade.count === "number" && grade.count >= 1
+            ? grade.count
+            : 1,
+        payment:
+          typeof grade.payment === "number" && grade.payment >= 0
+            ? grade.payment
+            : 0,
+      } satisfies Grade;
+    });
+
+    if (grades.length === 0) return null;
+
+    return {
+      total: typeof saved.total === "number" ? saved.total : 20_000,
+      grades,
+      topOverridden: saved.topOverridden === true,
+      darkMode: saved.darkMode === true,
+    };
   } catch {
     return null;
   }
@@ -138,11 +176,17 @@ class CalculatorStore {
   };
 
   addGrade = () => {
-    const lastNum =
-      this.grades.length > 0 ? this.grades[this.grades.length - 1].num : 0;
+    const usedLabels = new Set(this.grades.map((grade) => grade.label));
+    const periodNumbers = this.grades
+      .map((grade) => grade.label.match(/^(\d+)期$/)?.[1])
+      .filter((num): num is string => num !== undefined)
+      .map(Number);
+    let nextPeriod = periodNumbers.length > 0 ? Math.max(...periodNumbers) + 1 : 1;
+    while (usedLabels.has(`${nextPeriod}期`)) nextPeriod += 1;
+
     const newGrade: Grade = {
       id: crypto.randomUUID(),
-      num: lastNum + 1,
+      label: `${nextPeriod}期`,
       count: 3,
       payment: 0,
     };
@@ -168,8 +212,12 @@ class CalculatorStore {
     this.topOverridden = false;
   };
 
-  updateGradeNum = (id: string, num: number) => {
-    this.grades = this.grades.map((g) => (g.id === id ? { ...g, num } : g));
+  updateGradeLabel = (id: string, label: string) => {
+    const normalized = label.trim();
+    if (!normalized) return;
+    this.grades = this.grades.map((g) =>
+      g.id === id ? { ...g, label: normalized } : g,
+    );
   };
 
   updateGradeCount = (id: string, delta: number) => {

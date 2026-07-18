@@ -3,7 +3,7 @@
 	import { SLIDER_MAX, SLIDER_HARD_MAX, SNAP_STEP } from '$lib/types';
 
 	interface Props {
-		gradeNum: number;
+		gradeLabel: string;
 		payment: number;
 		color: string;
 		isTop: boolean;
@@ -12,7 +12,7 @@
 		onreset?: () => void;
 	}
 
-	let { gradeNum, payment, color, isTop, isAuto, onchange, onreset }: Props = $props();
+	let { gradeLabel, payment, color, isTop, isAuto, onchange, onreset }: Props = $props();
 
 	let trackEl = $state<HTMLDivElement | null>(null);
 	let isDragging = $state(false);
@@ -61,7 +61,7 @@
 	<div class="row-header">
 		<div class="grade-label">
 			<span class="grade-dot" style="background: {color};"></span>
-			<span class="grade-name">{gradeNum}期</span>
+			<span class="grade-name">{gradeLabel}</span>
 		</div>
 
 		<div class="row-actions">
@@ -89,7 +89,7 @@
 		aria-valuemin={0}
 		aria-valuemax={sliderMax}
 		aria-valuenow={payment}
-		aria-label="{gradeNum}期の支払額"
+		aria-label="{gradeLabel}の支払額"
 		tabindex={isTop && isAuto ? -1 : 0}
 		onpointerdown={onPointerDown}
 		onpointermove={onPointerMove}

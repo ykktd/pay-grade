@@ -28,7 +28,7 @@
 				{@const isAuto = !calculator.topOverridden}
 				<div class="grade-row">
 					<span class="grade-dot" style="background: {GRADE_COLORS.top.main};"></span>
-					<span class="grade-name">{calculator.topGrade.num}期</span>
+					<span class="grade-name">{calculator.topGrade.label}</span>
 					<span class="grade-count">×{calculator.topGrade.count}人</span>
 					{#if isAuto}
 						<span class="grade-badge auto">自動</span>
@@ -45,7 +45,7 @@
 			{#each calculator.lower as grade (grade.id)}
 				<div class="grade-row">
 					<span class="grade-dot" style="background: {GRADE_COLORS.lower.main};"></span>
-					<span class="grade-name">{grade.num}期</span>
+					<span class="grade-name">{grade.label}</span>
 					<span class="grade-count">×{grade.count}人</span>
 					<span class="grade-subtotal">
 						計 ¥{(grade.payment * grade.count).toLocaleString('ja-JP')}

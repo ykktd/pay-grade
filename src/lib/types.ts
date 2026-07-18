@@ -1,6 +1,6 @@
 export interface Grade {
 	id: string;
-	num: number;
+	label: string;
 	count: number;
 	payment: number;
 }
